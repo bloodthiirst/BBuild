@@ -15,7 +15,8 @@ public class Program
 
         DirectoryInfo? rootFolderPath = new DirectoryInfo(rootProjectPath);
 
-        if (!BuildUtils.GetFromPath(rootProjectPath, out BuildSettings? settings, out BuildDependencies? dependencies))
+        BuildSettings? settings = BuildUtils.GetFromPath(rootProjectPath);
+        if (settings == null)
         {
             return -1;
         }
@@ -35,9 +36,8 @@ public class Program
         {
             foreach (DependencyNode dep in parallelLayer)
             {
-                BuildDependencies currDependencies = dep.BuildDependencies;
                 BuildSettings currSettings = dep.BuildSettings;
-                Builder builder = new Builder(currDependencies, currSettings, context);
+                Builder builder = new Builder(currSettings, context);
                 BuildExports result = await builder.Build();
 
                 if (result.Result != BuildExports.BuildResult.Success)

@@ -8,11 +8,6 @@ namespace Bloodthirst.BBuild;
 public sealed class BuildUtils
 {
     /// <summary>
-    /// Fixed name of the json file containing the dependencies of a project
-    /// </summary>
-    public const string DependenciesFilename = "Dependencies.json";
-
-    /// <summary>
     /// Fixed name of the json file containing the build settings of a project
     /// </summary>
     public const string BuildFilename = "Build.json";
@@ -28,53 +23,27 @@ public sealed class BuildUtils
     /// <para>Returns <see cref="true"/> if it's successfull and fills <paramref name="dependencies"/> and <paramref name="settings"/></para> 
     /// <para>Returns <see cref="false"/> if it fails and sets <paramref name="dependencies"/> and <paramref name="settings"/> to <see cref="null"/></para> 
     /// </returns>
-    public static bool GetFromPath(string absoluteProjectPath, out BuildSettings? settings, out BuildDependencies? dependencies)
+    public static BuildSettings? GetFromPath(string absoluteProjectPath)
     {
         Debug.Assert(Path.IsPathRooted(absoluteProjectPath));
 
         DirectoryInfo? folderPath = new DirectoryInfo(absoluteProjectPath);
         List<FileInfo> files = new List<FileInfo>(folderPath.EnumerateFiles());
 
-        List<FileInfo> dependenciesFiles = new List<FileInfo>(files.Where(f => f.Name == DependenciesFilename));
         List<FileInfo> buildFiles = new List<FileInfo>(files.Where(f => f.Name == BuildFilename));
-
-        if (dependenciesFiles.Count != 1)
-        {
-            string error = $"Dependencies file was not found, make sure only one \"{DependenciesFilename}\" file is present";
-            dependencies = null;
-            settings = null;
-            return false;
-        }
 
         if (buildFiles.Count != 1)
         {
             string error = $"Build file was not found, make sure only one \"{BuildFilename}\" is present";
-            dependencies = null;
-            settings = null;
-            return false;
+            return null;
         }
 
-        FileInfo dependenciesFile = dependenciesFiles[0];
         FileInfo buildFile = buildFiles[0];
 
         JsonSerializerOptions jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.General);
         jsonOptions.Converters.Add(new JsonStringEnumConverter());
 
-        using (FileStream dependenciesFs = dependenciesFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
-        {
-            try
-            {
-                dependencies = JsonSerializer.Deserialize<BuildDependencies>(dependenciesFs, jsonOptions);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex.Message);
-                dependencies = null;
-                settings = null;
-                return false;
-            }
-        }
-
+        BuildSettings? settings = null;
         using (FileStream buildFs = buildFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             try
@@ -84,18 +53,16 @@ public sealed class BuildUtils
             catch (Exception ex)
             {
                 Console.Error.WriteLine(ex.Message);
-                dependencies = null;
-                settings = null;
-                return false;
+                return null;
             }
         }
 
-        Debug.Assert(settings != null);
-        Debug.Assert(dependencies != null);
-        
-        settings.AbsolutePath = absoluteProjectPath;
+        if (settings != null)
+        {
+            settings.AbsolutePath = absoluteProjectPath;
+        }
 
-        return true;
+        return settings;
     }
 
     public static string ResolveStringWithVariables(string inputString , BuildSettings settings)

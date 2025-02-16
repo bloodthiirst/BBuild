@@ -4,13 +4,11 @@ using System.Runtime.Intrinsics.Arm;
 namespace Bloodthirst.BBuild;
 public sealed class ExecutableOutput
 {
-    private readonly BuildDependencies dependencies;
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public ExecutableOutput(BuildDependencies dependencies, BuildSettings settings, BuildContext context)
+    public ExecutableOutput(BuildSettings settings, BuildContext context)
     {
-        this.dependencies = dependencies;
         this.settings = settings;
         this.context = context;
     }
@@ -19,7 +17,7 @@ public sealed class ExecutableOutput
     {
         List<string> args = new List<string>();
 
-        filePath = dependencies.LinkerPath;
+        filePath = settings.CompilerResources.LinkerPath;
         arguments = args;
 
         string absoluteExePath = $"{output.FolderPath}/{output.Filename}.exe";

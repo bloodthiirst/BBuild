@@ -4,13 +4,11 @@ using System.Text;
 namespace Bloodthirst.BBuild;
 public sealed class CompilationStep
 {
-    private readonly BuildDependencies dependencies;
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public CompilationStep(BuildSettings settings, BuildDependencies dependencies, BuildContext context)
+    public CompilationStep(BuildSettings settings, BuildContext context)
     {
-        this.dependencies = dependencies;
         this.settings = settings;
         this.context = context;
     }
@@ -19,7 +17,7 @@ public sealed class CompilationStep
     {
         List<string> args = new List<string>();
 
-        filePath = dependencies.CompilerPath;
+        filePath = settings.CompilerResources.CompilerPath;
         arguments = args;
 
         // Complilation settings

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 public static class BBuildCallback
 {
-    public static void CleanupObjectFilesFolder(BuildSettings settings, BuildDependencies dependencies, BuildContext context, JsonElement[] parameters)
+    public static void CleanupObjectFilesFolder(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         string objectFilesPath = settings.ObjectFilesPath;
 
@@ -21,7 +21,7 @@ public static class BBuildCallback
         }
     }
 
-    public static void CleanupOutputFolder(BuildSettings settings, BuildDependencies dependencies, BuildContext context, JsonElement[] parameters)
+    public static void CleanupOutputFolder(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         Debug.Assert(parameters != null);
         Debug.Assert(parameters.Length == 1);
@@ -31,7 +31,7 @@ public static class BBuildCallback
         Debug.Assert(param.ValueKind == JsonValueKind.String);
         string outputType = param.GetString()!;
 
-        if(!Enum.TryParse(typeof(BuildOutput), outputType, out object? result))
+        if (!Enum.TryParse(typeof(BuildOutput), outputType, out object? result))
         {
             Console.Error.WriteLine($"Error while parsing {nameof(BuildOutput)} , {outputType} doesn't seem to be part of the enum entries");
             return;
@@ -61,27 +61,28 @@ public static class BBuildCallback
         }
     }
 
-    public static void CopyOutputDllNextToExe(BuildSettings settings, BuildDependencies dependencies, BuildContext context, JsonElement[] parameters)
+    public static void CopyOutputDllNextToExe(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         Debug.Assert(parameters != null);
         Debug.Assert(parameters.Length == 1);
 
         JsonElement param = parameters[0];
-        
+
         Debug.Assert(param.ValueKind == JsonValueKind.String);
         string dependencyName = param.GetString()!;
 
         DependencySettings? dependencyInfo = settings.DependencyPaths.FirstOrDefault(d => d.Name == dependencyName);
         Debug.Assert(dependencyInfo != null);
-        
+
         string dependencyPath = dependencyInfo.Path;
 
-        if(!Path.IsPathRooted(dependencyPath))
+        if (!Path.IsPathRooted(dependencyPath))
         {
             dependencyPath = Path.GetFullPath(dependencyPath, settings.AbsolutePath);
         }
 
-        if (!BuildUtils.GetFromPath(dependencyPath, out BuildSettings? depSettings, out _))
+        BuildSettings? depSettings = BuildUtils.GetFromPath(dependencyPath);
+        if (depSettings == null)
         {
             return;
         }
@@ -91,8 +92,8 @@ public static class BBuildCallback
         BuildOutputInfo? dllOutput = depSettings.BuildOutputs.FirstOrDefault(o => o.OutputType == BuildOutput.Dll);
         Debug.Assert(dllOutput != null);
 
-        string absPathFromDllFolder = Path.GetFullPath(dllOutput.FolderPath , depSettings.AbsolutePath);
-        string absPathFromDll = Path.GetFullPath(dllOutput.Filename + ".dll" , absPathFromDllFolder);
+        string absPathFromDllFolder = Path.GetFullPath(dllOutput.FolderPath, depSettings.AbsolutePath);
+        string absPathFromDll = Path.GetFullPath(dllOutput.Filename + ".dll", absPathFromDllFolder);
 
         BuildOutputInfo? exeOutput = settings.BuildOutputs.FirstOrDefault(o => o.OutputType == BuildOutput.Executable);
         Debug.Assert(exeOutput != null);
@@ -103,22 +104,22 @@ public static class BBuildCallback
         Debug.Assert(File.Exists(absPathFromDll));
 
         // Delete old Dll
-        if(File.Exists(absPathToDll))
+        if (File.Exists(absPathToDll))
         {
             File.Delete(absPathToDll);
             Console.WriteLine($"> Deleted old Dll at : {absPathToDll}");
         }
 
-        File.Copy(absPathFromDll, absPathToDll , true);
+        File.Copy(absPathFromDll, absPathToDll, true);
         Console.WriteLine($"> Copied Dll from : {absPathFromDll} to {absPathToDll}");
     }
 
-    public static void PrebuildAction(BuildSettings settings, BuildDependencies dependencies, BuildContext context, JsonElement[] parameters)
+    public static void PrebuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         Console.WriteLine($"> Prebuild called from project : {settings.Name} with {parameters.Length} params passed");
     }
 
-    public static void PostbuildAction(BuildSettings settings, BuildDependencies dependencies, BuildContext context, JsonElement[] parameters)
+    public static void PostbuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         Console.WriteLine($"> Postbuild called from project : {settings.Name} with {parameters.Length} params passed");
     }

@@ -4,13 +4,11 @@ using System.Text;
 namespace Bloodthirst.BBuild;
 public sealed class StaticLibraryOutput
 {
-    private readonly BuildDependencies dependencies;
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public StaticLibraryOutput(BuildDependencies dependencies, BuildSettings settings , BuildContext context)
+    public StaticLibraryOutput(BuildSettings settings , BuildContext context)
     {
-        this.dependencies = dependencies;
         this.settings = settings;
         this.context = context;
     }
@@ -22,7 +20,7 @@ public sealed class StaticLibraryOutput
         List<string> args = new List<string>();
 
         arguments = args;
-        filePath = dependencies.LibPath;
+        filePath = settings.CompilerResources.LibPath;
 
         args.Add($"/OUT:{output.FolderPath}/{output.Filename}.lib");
 

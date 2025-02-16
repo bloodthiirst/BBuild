@@ -6,19 +6,16 @@ public sealed class DependencyTreeBuilder
 {
     public static DependencyNode? BuildDependencies(string absoluteRootProjectPath)
     {
-        if (!BuildUtils.GetFromPath(absoluteRootProjectPath, out BuildSettings? settings, out BuildDependencies? dependencies))
+        BuildSettings? settings = BuildUtils.GetFromPath(absoluteRootProjectPath);
+        if (settings == null)
         {
             Console.Error.WriteLine($"Couldn't get project info at : {absoluteRootProjectPath}");
             return null;
         }
 
-        Debug.Assert(settings != null);
-        Debug.Assert(dependencies != null);
-
         DependencyNode node = new DependencyNode()
         {
             BuildSettings = settings,
-            BuildDependencies = dependencies,
             Dependencies = new List<DependencyNode>()
         };
 

@@ -4,13 +4,11 @@ using System.Text;
 namespace Bloodthirst.BBuild;
 public sealed class DynamicLibraryOutput
 {
-    private readonly BuildDependencies dependencies;
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public DynamicLibraryOutput(BuildDependencies dependencies, BuildSettings settings, BuildContext context)
+    public DynamicLibraryOutput(BuildSettings settings, BuildContext context)
     {
-        this.dependencies = dependencies;
         this.settings = settings;
         this.context = context;
     }
@@ -20,7 +18,7 @@ public sealed class DynamicLibraryOutput
 
         List<string> args = new List<string>();
 
-        filePath = dependencies.LinkerPath;
+        filePath = settings.CompilerResources.LinkerPath;
         arguments = args;
 
         string absoluteDllPath = $"{output.FolderPath}/{output.Filename}.dll";
