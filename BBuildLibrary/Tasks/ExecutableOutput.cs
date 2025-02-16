@@ -8,14 +8,14 @@ public sealed class ExecutableOutput
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public ExecutableOutput(BuildDependencies dependencies, BuildSettings settings , BuildContext context)
+    public ExecutableOutput(BuildDependencies dependencies, BuildSettings settings, BuildContext context)
     {
         this.dependencies = dependencies;
         this.settings = settings;
         this.context = context;
     }
 
-    public void GetCommand(BuildOutputInfo output, BuildExports exports, out string filePath , out IReadOnlyList<string> arguments)
+    public void GetCommand(BuildOutputInfo output, BuildExports exports, out string filePath, out IReadOnlyList<string> arguments)
     {
         List<string> args = new List<string>();
 
@@ -31,12 +31,25 @@ public sealed class ExecutableOutput
         args.Add($"/OUT:{absoluteExePath}");
 
         // args
+        args.Add("/DEBUG:FULL");
+        args.Add("/SUBSYSTEM:CONSOLE");
+        args.Add("/CGTHREADS:4");
+
+        // platform
         {
-            args.Add("/DEBUG:FULL");
-            args.Add("/MACHINE:X86");
-            args.Add("/SUBSYSTEM:CONSOLE");
-            args.Add("/CGTHREADS:4");
+            TargetPlatform platform = settings.CompilationSettings.Platform;
+            switch (platform)
+            {
+                case TargetPlatform.Arm: { args.Add("/MACHINE:ARM"); break; }
+                case TargetPlatform.Arm64: { args.Add("/MACHINE:ARM64"); break; }
+                case TargetPlatform.Arm64EC: { args.Add("/MACHINE:ARM64EC"); break; }
+                case TargetPlatform.EBC: { args.Add("/MACHINE:EBC"); break; }
+                case TargetPlatform.x64: { args.Add("/MACHINE:X64"); break; }
+                case TargetPlatform.x86: { args.Add("/MACHINE:X86"); break; }
+                default: { Debug.Fail($"Case {platform} not handled"); break; }
+            }
         }
+
 
         // folders to search in
         foreach (string lib in settings.LibrariesFolderPaths)
@@ -78,7 +91,7 @@ public sealed class ExecutableOutput
 
         GetCommand(output, exports, out string filePath, out IReadOnlyList<string> args);
 
-        ProcessStartInfo startInfo = new ProcessStartInfo(filePath , args);
+        ProcessStartInfo startInfo = new ProcessStartInfo(filePath, args);
 
         TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 
@@ -97,7 +110,7 @@ public sealed class ExecutableOutput
         process.Start();
 
         int compilationResult = await tcs.Task;
-        
+
         if (compilationResult == 0)
         {
             exports.Executables.Add(exeFilePath);

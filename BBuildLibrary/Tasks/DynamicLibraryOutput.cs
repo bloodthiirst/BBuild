@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using System.Text;
 
 namespace Bloodthirst.BBuild;
@@ -9,7 +8,7 @@ public sealed class DynamicLibraryOutput
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public DynamicLibraryOutput(BuildDependencies dependencies, BuildSettings settings , BuildContext context)
+    public DynamicLibraryOutput(BuildDependencies dependencies, BuildSettings settings, BuildContext context)
     {
         this.dependencies = dependencies;
         this.settings = settings;
@@ -30,13 +29,24 @@ public sealed class DynamicLibraryOutput
             absoluteDllPath = Path.GetFullPath(absoluteDllPath, settings.AbsolutePath).Replace("\\", "/");
         }
 
-        // args
+        args.Add("/DLL");
+        args.Add("/DEBUG:FULL");
+        args.Add("/SUBSYSTEM:CONSOLE");
+        args.Add("/CGTHREADS:4");
+        
+        // platform
         {
-            args.Add("/DEBUG:FULL");
-            args.Add("/MACHINE:X86");
-            args.Add("/SUBSYSTEM:CONSOLE");
-            args.Add("/CGTHREADS:4");
-            args.Add("/DLL");
+            TargetPlatform platform = settings.CompilationSettings.Platform;
+            switch (platform)
+            {
+                case TargetPlatform.Arm: { args.Add("/MACHINE:ARM"); break; }
+                case TargetPlatform.Arm64: { args.Add("/MACHINE:ARM64"); break; }
+                case TargetPlatform.Arm64EC: { args.Add("/MACHINE:ARM64EC"); break; }
+                case TargetPlatform.EBC: { args.Add("/MACHINE:EBC"); break; }
+                case TargetPlatform.x64: { args.Add("/MACHINE:X64"); break; }
+                case TargetPlatform.x86: { args.Add("/MACHINE:X86"); break; }
+                default: { Debug.Fail($"Case {platform} not handled"); break; }
+            }
         }
 
         // folders to search in

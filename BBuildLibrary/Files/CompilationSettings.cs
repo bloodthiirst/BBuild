@@ -100,6 +100,16 @@ public enum LanguageStandard
     CppLatest
 }
 
+public enum TargetPlatform
+{
+    Arm,
+    Arm64,
+    Arm64EC,
+    EBC,
+    x64,
+    x86
+}
+
 /// <summary>
 /// The /O options control various optimizations that help you create code for maximum speed or minimum size.
 /// </summary>
@@ -148,16 +158,13 @@ public enum OptimizationLevel
 
 public sealed class CompilationSettings
 {
+    public TargetPlatform Platform { get; set; } = TargetPlatform.x64;
     public ExceptionHandling[] ExceptionHandlingOptions { get; set; } = [ExceptionHandling.EHs , ExceptionHandling.EHc];
-
     public WarningLevel WarningLevel { get; set; } = WarningLevel.W4;
     public bool WarningsAsError { get; set; } = false;
-
     public DebugInformation DebugInformation { get; set; } = DebugInformation.Zi;
     public Sanitizers[] EnabledSanitizers { get; set; } = [ Sanitizers.AddressSanitizer ];
-
     public LanguageStandard LanguageStandard { get; set; } = LanguageStandard.Cpp17;
-
     public OptimizationLevel[] OptimizationLevelOptions { get; set; } = [ OptimizationLevel.Ot ];
 
     /// <summary>
