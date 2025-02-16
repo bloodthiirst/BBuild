@@ -38,6 +38,8 @@ public sealed class BuildSettings
     /// </summary>
     public BuildCallback[] PostbuildAction { get; set; } = [];
 
+    public CompilationSettings CompilationSettings { get; set; } = new CompilationSettings();
+
     /// <summary>
     /// Relative paths to the source files
     /// </summary>

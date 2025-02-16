@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Bloodthirst.BBuild;
 
@@ -57,6 +58,8 @@ public sealed class BuildUtils
         FileInfo buildFile = buildFiles[0];
 
         JsonSerializerOptions jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.General);
+        jsonOptions.Converters.Add(new JsonStringEnumConverter());
+
         using (FileStream dependenciesFs = dependenciesFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             try

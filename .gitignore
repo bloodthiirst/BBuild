@@ -5,6 +5,12 @@ project.lock.json
 *.pyc
 nupkg/
 
+# Properties
+Properties/
+
+# Custom Batchscript
+Postbuild.bat
+
 # Visual Studio Code
 .vscode/*
 !.vscode/settings.json
@@ -42,6 +48,3 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
-
-# Properties
-Properties/

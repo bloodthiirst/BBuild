@@ -1,4 +1,6 @@
-﻿namespace Bloodthirst.BBuild.Front;
+﻿using System.Diagnostics;
+
+namespace Bloodthirst.BBuild.Front;
 
 public class Program
 {
@@ -25,12 +27,13 @@ public class Program
         };
 
         DependencyNode? rootNode = DependencyTreeBuilder.BuildDependencies(rootProjectPath);
+        Debug.Assert(rootNode != null);
 
         DependencyNode[][] parallelNodes = DependencyTreeBuilder.FlattenDependencyNodes(rootNode);
 
-        foreach (var parallelLayer in parallelNodes.Reverse())
+        foreach (DependencyNode[] parallelLayer in parallelNodes.Reverse())
         {
-            foreach(var dep in parallelLayer)
+            foreach (DependencyNode dep in parallelLayer)
             {
                 BuildDependencies currDependencies = dep.BuildDependencies;
                 BuildSettings currSettings = dep.BuildSettings;
