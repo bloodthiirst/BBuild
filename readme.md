@@ -1,7 +1,7 @@
 
 # BBuild
 
-A lightweight build tool for C++ projects made in .NET Core
+A lightweight build tool for C++ projects on Windows, made in .NET Core
 
 ## Why did i make this ?
 Building a project should never be an obstacle when coding, and i got tired of dealing with the cursed CMake syntax everytime i wanted to do something slightly different than building a "Hello world" app , so decided to make my own build tool with blackjack and hookers, something sane, lightweight and easily editable, this is my attempt at making that.
