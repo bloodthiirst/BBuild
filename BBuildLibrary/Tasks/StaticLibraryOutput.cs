@@ -64,17 +64,20 @@ public sealed class StaticLibraryOutput
 
         int compilationResult = await tcs.Task;
 
+        LinkingMessage[] messages = Array.Empty<LinkingMessage>();
+
         if (compilationResult == 0)
         {
-            exports.Libraries.Add(libFilePath);
+            exports.Dlls.Add(libFilePath);
+        }
+        else
+        {
+            string stdStr = await process.StandardOutput.ReadToEndAsync();
+            messages = BuildUtils.ParseLinkingOutput(stdStr);
+
+            exports.LinkingMessages = messages;
         }
 
-        string stdStr = await process.StandardOutput.ReadToEndAsync();
-
-        LinkingMessage[] messages = BuildUtils.ParseLinkingOutput(stdStr);
-
-        exports.LinkingMessages = messages;
-        
         process.Dispose();
 
         return compilationResult;

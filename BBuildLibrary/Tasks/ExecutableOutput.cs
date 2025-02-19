@@ -99,16 +99,19 @@ public sealed class ExecutableOutput
 
         int compilationResult = await tcs.Task;
 
+        LinkingMessage[] messages = Array.Empty<LinkingMessage>();
+
         if (compilationResult == 0)
         {
-            exports.Executables.Add(exeFilePath);
+            exports.Dlls.Add(exeFilePath);
         }
+        else
+        {
+            string stdStr = await process.StandardOutput.ReadToEndAsync();
+            messages = BuildUtils.ParseLinkingOutput(stdStr);
 
-        string stdStr = await process.StandardOutput.ReadToEndAsync();
-
-        LinkingMessage[] messages = BuildUtils.ParseLinkingOutput(stdStr);
-
-        exports.LinkingMessages = messages;
+            exports.LinkingMessages = messages;
+        }
 
         process.Dispose();
 
