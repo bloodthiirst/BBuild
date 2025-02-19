@@ -22,10 +22,7 @@ public sealed class DynamicLibraryOutput
         arguments = args;
 
         string absoluteDllPath = $"{output.FolderPath}/{output.Filename}.dll";
-        if (!Path.IsPathRooted(absoluteDllPath))
-        {
-            absoluteDllPath = Path.GetFullPath(absoluteDllPath, settings.AbsolutePath).Replace("\\", "/");
-        }
+        absoluteDllPath = BuildUtils.EnsurePathIsAbsolute(absoluteDllPath, settings);
 
         args.Add("/DLL");
         args.Add("/DEBUG:FULL");
@@ -59,11 +56,7 @@ public sealed class DynamicLibraryOutput
         foreach (string objectFilePath in exports.ObjectFiles)
         {
             string path = objectFilePath;
-
-            if (!Path.IsPathRooted(path))
-            {
-                path = Path.GetFullPath(path, settings.AbsolutePath).Replace("\\", "/");
-            }
+            path = BuildUtils.EnsurePathIsAbsolute(path, settings);
 
             args.Add(path);
         }
@@ -76,6 +69,8 @@ public sealed class DynamicLibraryOutput
         GetCommand(output, exports, out string filePath, out IReadOnlyList<string> args);
 
         ProcessStartInfo startInfo = new ProcessStartInfo(filePath, args);
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
 
         TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 

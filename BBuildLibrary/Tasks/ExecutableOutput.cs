@@ -21,10 +21,7 @@ public sealed class ExecutableOutput
         arguments = args;
 
         string absoluteExePath = $"{output.FolderPath}/{output.Filename}.exe";
-        if (!Path.IsPathRooted(absoluteExePath))
-        {
-            absoluteExePath = Path.GetFullPath(absoluteExePath, settings.AbsolutePath).Replace("\\", "/");
-        }
+        absoluteExePath = BuildUtils.EnsurePathIsAbsolute(absoluteExePath, settings);
 
         args.Add($"/OUT:{absoluteExePath}");
 
@@ -58,11 +55,7 @@ public sealed class ExecutableOutput
         foreach (string objectFilePath in exports.ObjectFiles)
         {
             string path = objectFilePath;
-
-            if (!Path.IsPathRooted(path))
-            {
-                path = Path.GetFullPath(path, settings.AbsolutePath).Replace("\\", "/");
-            }
+            path = BuildUtils.EnsurePathIsAbsolute(path, settings);
 
             args.Add(path);
         }
@@ -71,13 +64,7 @@ public sealed class ExecutableOutput
         foreach (string libFilePath in settings.LibraryFiles)
         {
             string path = libFilePath;
-
-            path = BuildUtils.ResolveStringWithVariables(path, settings);
-
-            if (!Path.IsPathRooted(path))
-            {
-                path = Path.GetFullPath(path, settings.AbsolutePath).Replace("\\", "/");
-            }
+            path = BuildUtils.EnsurePathIsAbsolute(path, settings);
 
             args.Add(path);
         }
@@ -90,6 +77,8 @@ public sealed class ExecutableOutput
         GetCommand(output, exports, out string filePath, out IReadOnlyList<string> args);
 
         ProcessStartInfo startInfo = new ProcessStartInfo(filePath, args);
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
 
         TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 

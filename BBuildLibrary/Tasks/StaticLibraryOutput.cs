@@ -43,13 +43,15 @@ public sealed class StaticLibraryOutput
         GetCommand(output, exports, out string filePath, out IReadOnlyList<string> args);
 
         ProcessStartInfo startInfo = new ProcessStartInfo(filePath, args);
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
 
         TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
 
         Process process = new Process()
         {
             StartInfo = startInfo,
-            EnableRaisingEvents = true,
+            EnableRaisingEvents = false,
         };
 
         process.Exited += (sender, args) =>

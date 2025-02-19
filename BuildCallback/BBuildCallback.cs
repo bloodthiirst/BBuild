@@ -61,57 +61,70 @@ public static class BBuildCallback
         }
     }
 
-    public static void CopyOutputDllNextToExe(BuildSettings settings, BuildContext context, JsonElement[] parameters)
+    /// <summary>
+    /// Callback method used to copy a Dll produced from a dependency and paste it next to the executable
+    /// </summary>
+    /// <param name="settings"></param>
+    /// <param name="context"></param>
+    /// <param name="parameters"></param>
+    public static void CopyOutputDllNextToExe(BuildSettings settings, BuildContext context, BuildExports export, JsonElement[] parameters)
     {
-        Debug.Assert(parameters != null);
-        Debug.Assert(parameters.Length == 1);
-
-        JsonElement param = parameters[0];
-
-        Debug.Assert(param.ValueKind == JsonValueKind.String);
-        string dependencyName = param.GetString()!;
-
-        DependencySettings? dependencyInfo = settings.DependencyPaths.FirstOrDefault(d => d.Name == dependencyName);
-        Debug.Assert(dependencyInfo != null);
-
-        string dependencyPath = dependencyInfo.Path;
-
-        if (!Path.IsPathRooted(dependencyPath))
+        // get the dependency name from the parameters
+        string dependencyName = string.Empty;
         {
-            dependencyPath = Path.GetFullPath(dependencyPath, settings.AbsolutePath);
+            Debug.Assert(parameters != null);
+            Debug.Assert(parameters.Length == 1);
+
+            JsonElement param = parameters[0];
+            Debug.Assert(param.ValueKind == JsonValueKind.String);
+
+            dependencyName = param.GetString()!;
         }
 
-        BuildSettings? depSettings = BuildUtils.GetFromPath(dependencyPath);
-        if (depSettings == null)
+        // get the build settings of the dependency
+        BuildSettings? depSettings = null;
         {
-            return;
+            DependencySettings? dependencyInfo = settings.DependencyPaths.FirstOrDefault(d => d.Name == dependencyName);
+            Debug.Assert(dependencyInfo != null);
+
+            string dependencyPath = dependencyInfo.Path;
+            dependencyPath = BuildUtils.EnsurePathIsAbsolute(dependencyPath, settings);
+
+            depSettings = BuildUtils.GetFromPath(dependencyPath);
         }
 
         Debug.Assert(depSettings != null);
 
-        BuildOutputInfo? dllOutput = depSettings.BuildOutputs.FirstOrDefault(o => o.OutputType == BuildOutput.Dll);
-        Debug.Assert(dllOutput != null);
-
-        string absPathFromDllFolder = Path.GetFullPath(dllOutput.FolderPath, depSettings.AbsolutePath);
-        string absPathFromDll = Path.GetFullPath(dllOutput.Filename + ".dll", absPathFromDllFolder);
-
-        BuildOutputInfo? exeOutput = settings.BuildOutputs.FirstOrDefault(o => o.OutputType == BuildOutput.Executable);
-        Debug.Assert(exeOutput != null);
-
-        string absPathToExeFolder = Path.GetFullPath(exeOutput.FolderPath, settings.AbsolutePath);
-        string absPathToDll = Path.GetFullPath(dllOutput.Filename + ".dll", absPathToExeFolder);
-
-        Debug.Assert(File.Exists(absPathFromDll));
-
-        // Delete old Dll
-        if (File.Exists(absPathToDll))
+        // get the Dll name and the absolute path to the source Dll
+        string DllName = string.Empty;
+        string absolutePathToDll = string.Empty;
         {
-            File.Delete(absPathToDll);
-            Console.WriteLine($"> Deleted old Dll at : {absPathToDll}");
+            BuildOutputInfo? dllOutput = depSettings.BuildOutputs.FirstOrDefault(o => o.OutputType == BuildOutput.Dll);
+            Debug.Assert(dllOutput != null);
+
+            string absolutePathDllFolder = Path.GetFullPath(dllOutput.FolderPath, depSettings.AbsolutePath);
+
+            DllName = dllOutput.Filename;
+            absolutePathToDll = Path.GetFullPath(DllName + ".dll", absolutePathDllFolder);
         }
 
-        File.Copy(absPathFromDll, absPathToDll, true);
-        Console.WriteLine($"> Copied Dll from : {absPathFromDll} to {absPathToDll}");
+        // get the absolute path of the destination Dll
+        string absolutePathToDestination = string.Empty;
+        {
+            BuildOutputInfo? exeOutput = settings.BuildOutputs.FirstOrDefault(o => o.OutputType == BuildOutput.Executable);
+            Debug.Assert(exeOutput != null);
+
+            string absolutePathToExeFolder = Path.GetFullPath(exeOutput.FolderPath, settings.AbsolutePath);
+            absolutePathToDestination = Path.GetFullPath(DllName + ".dll", absolutePathToExeFolder);
+        }
+
+        // check that Dll exits in the dependency output
+        Debug.Assert(File.Exists(absolutePathToDll));
+
+        // finally we perform the Dll copy
+        File.Copy(absolutePathToDll, absolutePathToDestination, true);
+
+        Console.WriteLine($"> Copied Dll from : {absolutePathToDll} to {absolutePathToDestination}");
     }
 
     public static void PrebuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
@@ -119,7 +132,7 @@ public static class BBuildCallback
         Console.WriteLine($"> Prebuild called from project : {settings.Name} with {parameters.Length} params passed");
     }
 
-    public static void PostbuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
+    public static void PostbuildAction(BuildSettings settings, BuildContext context, BuildExports export, JsonElement[] parameters)
     {
         Console.WriteLine($"> Postbuild called from project : {settings.Name} with {parameters.Length} params passed");
     }

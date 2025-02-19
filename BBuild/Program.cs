@@ -13,9 +13,8 @@ public class Program
             rootProjectPath = args[1];    
         }
 
-        DirectoryInfo? rootFolderPath = new DirectoryInfo(rootProjectPath);
-
         BuildSettings? settings = BuildUtils.GetFromPath(rootProjectPath);
+
         if (settings == null)
         {
             return -1;
@@ -24,7 +23,7 @@ public class Program
         BuildContext context = new BuildContext()
         {
             ExecutablePath = Environment.ProcessPath!.Replace("\\", "/"),
-            RootFolderPath = rootFolderPath.FullName.Replace("\\", "/")
+            RootFolderPath = rootProjectPath.Replace("\\", "/")
         };
 
         DependencyNode? rootNode = DependencyTreeBuilder.BuildDependencies(rootProjectPath);
@@ -32,7 +31,7 @@ public class Program
 
         DependencyNode[][] parallelNodes = DependencyTreeBuilder.FlattenDependencyNodes(rootNode);
 
-        foreach (DependencyNode[] parallelLayer in parallelNodes.Reverse())
+        foreach (DependencyNode[] parallelLayer in parallelNodes)
         {
             foreach (DependencyNode dep in parallelLayer)
             {
@@ -47,8 +46,6 @@ public class Program
             }
         }
 
-        return 0;
-        
+        return 0;   
     }
-
 }

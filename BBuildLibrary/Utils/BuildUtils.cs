@@ -12,6 +12,59 @@ public sealed class BuildUtils
     /// </summary>
     public const string BuildFilename = "Build.json";
 
+    public static bool IsFileName(ReadOnlySpan<char> line)
+    {
+        int i = 0;
+
+        // read name
+        while(i < line.Length)
+        {
+            char curr = line[i];
+            i++;
+
+            if (curr == '\\' || curr == '/' || curr == ':')
+            {
+                return false;
+            }
+            if( curr == '.')
+            {
+                i++;
+                break;
+            }
+        }
+
+        // read extension
+        while (i < line.Length)
+        {
+            char curr = line[i];
+            i++;
+
+            if(!char.IsLetter(curr))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Normalizes the input path an turns it into an absolute path , also fills in the custom variables used in the path
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="settings"></param>
+    /// <returns></returns>
+    public static string EnsurePathIsAbsolute(string path , BuildSettings settings)
+    {
+        path = ResolveStringWithVariables(path , settings);
+
+        if (!Path.IsPathRooted(path))
+        {
+            path = Path.GetFullPath(path, settings.AbsolutePath).Replace("\\", "/");
+        }
+
+        return path;
+    }
     /// <summary>
     /// Get the settings and dependencies of the project located at <paramref name="absoluteProjectPath"/>
     /// </summary>
