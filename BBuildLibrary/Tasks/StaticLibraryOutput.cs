@@ -7,13 +7,13 @@ public sealed class StaticLibraryOutput
     private readonly BuildSettings settings;
     private readonly BuildContext context;
 
-    public StaticLibraryOutput(BuildSettings settings , BuildContext context)
+    public StaticLibraryOutput(BuildSettings settings, BuildContext context)
     {
         this.settings = settings;
         this.context = context;
     }
 
-    public void GetCommand(BuildOutputInfo output , BuildExports exports , out string filePath , out IReadOnlyList<string> arguments)
+    public void GetCommand(BuildOutputInfo output, BuildExports exports, out string filePath, out IReadOnlyList<string> arguments)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -23,6 +23,7 @@ public sealed class StaticLibraryOutput
         filePath = settings.CompilerResources.LibPath;
 
         args.Add($"/OUT:{output.FolderPath}/{output.Filename}.lib");
+        args.Add("/NOLOGO"); // supress the "copyright" text at the start
 
         // folders to search in
         foreach (string lib in settings.LibrariesFolderPaths)
@@ -57,7 +58,6 @@ public sealed class StaticLibraryOutput
         process.Exited += (sender, args) =>
         {
             tcs.SetResult(process.ExitCode);
-            process.Dispose();
         };
 
         process.Start();
@@ -68,6 +68,14 @@ public sealed class StaticLibraryOutput
         {
             exports.Libraries.Add(libFilePath);
         }
+
+        string stdStr = await process.StandardOutput.ReadToEndAsync();
+
+        LinkingMessage[] messages = BuildUtils.ParseLinkingOutput(stdStr);
+
+        exports.LinkingMessages = messages;
+        
+        process.Dispose();
 
         return compilationResult;
     }

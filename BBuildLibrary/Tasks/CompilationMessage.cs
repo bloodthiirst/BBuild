@@ -19,3 +19,10 @@ public struct CompilationMessage
     public string Filename { get; set; }
     public MessagePerFile[] Messages { get; set; }
 }
+
+public struct LinkingMessage
+{
+    public string Filename { get; set; }
+    public string ErrorCode { get; set; }
+    public string Text { get; set; }
+}

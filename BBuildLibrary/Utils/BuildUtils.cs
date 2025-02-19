@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 namespace Bloodthirst.BBuild;
 
-public sealed class BuildUtils
+public static class BuildUtils
 {
     /// <summary>
     /// Fixed name of the json file containing the build settings of a project
@@ -18,7 +18,7 @@ public sealed class BuildUtils
 
         bool foundDot = false;
         // read name
-        while(i < line.Length)
+        while (i < line.Length)
         {
             char curr = line[i];
             i++;
@@ -27,7 +27,7 @@ public sealed class BuildUtils
             {
                 return false;
             }
-            if( curr == '.')
+            if (curr == '.')
             {
                 foundDot = true;
                 i++;
@@ -46,7 +46,7 @@ public sealed class BuildUtils
             char curr = line[i];
             i++;
 
-            if(!char.IsLetter(curr))
+            if (!char.IsLetter(curr))
             {
                 return false;
             }
@@ -56,14 +56,195 @@ public sealed class BuildUtils
     }
 
     /// <summary>
+    /// Parse the text produced by the compiler after compilation into a structured format
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static CompilationMessage[] ParseCompilationOutput(ReadOnlySpan<char> str)
+    {
+        List<CompilationMessage> messages = new List<CompilationMessage>();
+        List<MessagePerFile> messagesPerFile = new List<MessagePerFile>();
+
+        int i = 0;
+        while (i < str.Length)
+        {
+            CompilationMessage msg = new CompilationMessage();
+            ReadOnlySpan<char> fileName;
+
+            // get file name
+            {
+                int start = i;
+                int end = str.Slice(start).IndexOf("\r\n");
+                int len = end;
+                fileName = str.Slice(start, len);
+                i += len + 2;
+            }
+
+            messagesPerFile.Clear();
+
+            // iterate over the next lines to gather the warnings and errors
+            while (true)
+            {
+                if (i >= str.Length)
+                {
+                    msg.Filename = fileName.ToString();
+                    msg.Messages = messagesPerFile.ToArray();
+                    messages.Add(msg);
+                    break;
+                }
+
+                int start = i;
+                int end = str.Slice(start).IndexOf("\r\n");
+                int len = end;
+                i += len + 2;
+
+                // if we reach the end of the text without any text
+                if (end == -1)
+                {
+                    msg.Filename = fileName.ToString();
+                    msg.Messages = messagesPerFile.ToArray();
+                    messages.Add(msg);
+                    break;
+                }
+
+                ReadOnlySpan<char> line = str.Slice(start, len);
+
+                // if the next line is a filename , that means we're done with the current file , add and exit
+                if (BuildUtils.IsFileName(line))
+                {
+                    msg.Filename = fileName.ToString();
+                    msg.Messages = messagesPerFile.ToArray();
+                    messages.Add(msg);
+                    break;
+                }
+
+                int lineStart = line.IndexOf('(');
+                int lineEnd = line.IndexOf(')');
+                int lineVal;
+                MessageType messageType = MessageType.Warning;
+                ReadOnlySpan<char> filePath;
+                ReadOnlySpan<char> messageTxt;
+
+                // filepath
+                {
+                    filePath = line.Slice(0, lineStart);
+                }
+
+                // line number
+                {
+                    ReadOnlySpan<char> lineSpan = line.Slice(lineStart + 1, lineEnd - lineStart - 1);
+                    lineVal = int.Parse(lineSpan);
+                }
+
+                // message type
+                {
+                    if (line.Slice(lineEnd + 3).StartsWith("error"))
+                    {
+                        messageType = MessageType.Error;
+                    }
+                    if (line.Slice(lineEnd + 3).StartsWith("warning"))
+                    {
+                        messageType = MessageType.Warning;
+                    }
+                }
+
+                // text
+                {
+                    messageTxt = line.Slice(lineEnd + 3);
+                }
+
+                MessagePerFile perLine = new MessagePerFile
+                {
+                    Filepath = filePath.ToString().Replace('\\', '/'),
+                    Text = messageTxt.ToString(),
+                    LineNumber = lineVal,
+                    Type = messageType
+                };
+
+                messagesPerFile.Add(perLine);
+            }
+        }
+
+        return messages.ToArray();
+    }
+
+
+    /// <summary>
+    /// Parse the text produced by the linker after compilation into a structured format
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static LinkingMessage[] ParseLinkingOutput(ReadOnlySpan<char> str)
+    {
+        List<LinkingMessage> messages = new List<LinkingMessage>();
+
+        int i = 0;
+        while (i < str.Length)
+        {
+            int firstColon = -1;
+            for (int j = i + 1 ; j < str.Length - 1; j++)
+            {
+                char prev = str[j - 1];
+                char curr = str[j + 0];
+                char next = str[j + 1];
+
+                if(prev == ' ' && curr == ':' && next == ' ')
+                {
+                    firstColon = j;
+                    break;
+                }
+            }
+
+            Debug.Assert(firstColon != -1);
+            firstColon -= i;
+
+            int secondColon = str.Slice(i).Slice(firstColon + 1).IndexOf(':');
+            int endOfLine = str.Slice(i).IndexOf("\r\n");
+
+            ReadOnlySpan<char> filename;
+            ReadOnlySpan<char> errorCode;
+            ReadOnlySpan<char> messageTxt;
+
+            // filepath
+            {
+                filename = str.Slice(i, firstColon - 1);
+            }
+
+            // error code
+            {
+                errorCode = str.Slice( i + firstColon + 2, secondColon - 1);
+            }
+
+            // text
+            {
+                int offset = firstColon + secondColon + 3;
+                messageTxt = str.Slice(i).Slice(offset, endOfLine - offset);
+            }
+
+            LinkingMessage msg = new LinkingMessage()
+            {
+                Filename = filename.ToString(),
+                ErrorCode = errorCode.ToString(),
+                Text = messageTxt.ToString()
+            };
+
+            messages.Add(msg);
+
+            i += endOfLine + 2;
+        }
+
+        return messages.ToArray();
+    }
+
+    /// <summary>
     /// Normalizes the input path an turns it into an absolute path , also fills in the custom variables used in the path
     /// </summary>
     /// <param name="path"></param>
     /// <param name="settings"></param>
     /// <returns></returns>
-    public static string EnsurePathIsAbsolute(string path , BuildSettings settings)
+    public static string EnsurePathIsAbsolute(string path, BuildSettings settings)
     {
-        path = ResolveStringWithVariables(path , settings);
+        path = ResolveStringWithVariables(path, settings);
 
         if (!Path.IsPathRooted(path))
         {
@@ -125,14 +306,14 @@ public sealed class BuildUtils
         return settings;
     }
 
-    public static string ResolveStringWithVariables(string inputString , BuildSettings settings)
+    public static string ResolveStringWithVariables(string inputString, BuildSettings settings)
     {
         StringBuilder str = new StringBuilder(inputString);
 
         List<int> bracketPairs = new List<int>();
         FindBracketPairs(str, bracketPairs);
 
-        while(bracketPairs.Count != 0)
+        while (bracketPairs.Count != 0)
         {
             Debug.Assert(bracketPairs.Count % 2 == 0);
 
@@ -141,8 +322,8 @@ public sealed class BuildUtils
                 int open = bracketPairs[i - 1];
                 int close = bracketPairs[i];
 
-                string key = str.ToString(open + 1 , close - open - 1);
-                if(!settings.CustomVariables.TryGetValue(key, out string? value))
+                string key = str.ToString(open + 1, close - open - 1);
+                if (!settings.CustomVariables.TryGetValue(key, out string? value))
                 {
                     Debug.Fail($"Tried looking for the custom value {key} but didn't find it");
                     break;
@@ -159,20 +340,20 @@ public sealed class BuildUtils
         return str.ToString();
     }
 
-    private static void FindBracketPairs(StringBuilder inputString , List<int> bracketPairs)
+    private static void FindBracketPairs(StringBuilder inputString, List<int> bracketPairs)
     {
         int lastOpenIdx = -1;
 
-        for(int i = 0; i < inputString.Length; ++i)
+        for (int i = 0; i < inputString.Length; ++i)
         {
-            if(inputString[i] == '[')
+            if (inputString[i] == '[')
             {
                 Debug.Assert(lastOpenIdx == -1);
                 lastOpenIdx = i;
                 continue;
             }
 
-            if(inputString[i] == ']')
+            if (inputString[i] == ']')
             {
                 Debug.Assert(lastOpenIdx != -1);
                 bracketPairs.Add(lastOpenIdx);

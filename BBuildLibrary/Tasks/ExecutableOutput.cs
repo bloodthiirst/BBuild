@@ -29,6 +29,8 @@ public sealed class ExecutableOutput
         args.Add("/DEBUG:FULL");
         args.Add("/SUBSYSTEM:CONSOLE");
         args.Add("/CGTHREADS:4");
+        args.Add("/NOLOGO"); // supress the "copyright" text at the start
+        args.Add("/ERRORREPORT:prompt");
 
         // platform
         {
@@ -91,7 +93,6 @@ public sealed class ExecutableOutput
         process.Exited += (sender, args) =>
         {
             tcs.SetResult(process.ExitCode);
-            process.Dispose();
         };
 
         process.Start();
@@ -102,6 +103,14 @@ public sealed class ExecutableOutput
         {
             exports.Executables.Add(exeFilePath);
         }
+
+        string stdStr = await process.StandardOutput.ReadToEndAsync();
+
+        LinkingMessage[] messages = BuildUtils.ParseLinkingOutput(stdStr);
+
+        exports.LinkingMessages = messages;
+
+        process.Dispose();
 
         return compilationResult;
     }

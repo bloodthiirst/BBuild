@@ -208,129 +208,14 @@ public sealed class CompilationStep
 
         int compilationResult = await tcs.Task;
 
-        // stdStr format : multiline text giving the result of the compilation
-        // if the file "math.cpp" has no errors , then we would just get one line with the value "math.cpp"
-        // if the file "math.cpp" has error , then we would get a line with value "math.cpp" followed by multiple lines with each one representing an error
         string stdStr = await process.StandardOutput.ReadToEndAsync();
 
-        CompilationMessage[] messages = ParseCompilationOutput(stdStr);
+        CompilationMessage[] messages = BuildUtils.ParseCompilationOutput(stdStr);
 
         exports.CompilationMessages = messages;
         
         process.Dispose();
+        
         return compilationResult;
-    }
-
-    /// <summary>
-    /// Parse the text produced by the compiler after compilation into a structured format
-    /// </summary>
-    /// <param name="str"></param>
-    /// <returns></returns>
-    private CompilationMessage[] ParseCompilationOutput(string str)
-    {
-        List<CompilationMessage> messages = new List<CompilationMessage>();
-        List<MessagePerFile> messagesPerFile = new List<MessagePerFile>();
-
-        int i = 0;
-        while (i < str.Length)
-        {
-            CompilationMessage msg = new CompilationMessage();
-            ReadOnlySpan<char> fileName;
-
-            // get file name
-            {
-                int start = i;
-                int end = str.IndexOf("\r\n", start);
-                int len = end - 1 - start + 1;
-                fileName = str.AsSpan(start, len);
-                i += len + 2;
-            }
-
-            messagesPerFile.Clear();
-
-            // iterate over the next lines to gather the warnings and errors
-            while (true)
-            {
-                if(i >= str.Length)
-                {
-                    msg.Filename = fileName.ToString();
-                    msg.Messages = messagesPerFile.ToArray();
-                    messages.Add(msg);
-                    break;
-                }
-
-                int start = i;
-                int end = str.IndexOf("\r\n", start);
-                int len = end - 1 - start + 1;
-                i += len + 2;
-
-                // if we reach the end of the text without any text
-                if (end == -1)
-                {
-                    msg.Filename = fileName.ToString();
-                    msg.Messages = messagesPerFile.ToArray();
-                    messages.Add(msg);
-                    break;
-                }
-
-                ReadOnlySpan<char> line = str.AsSpan(start, len);
-
-                // if the next line is a filename , that means we're done with the current file , add and exit
-                if (BuildUtils.IsFileName(line))
-                {
-                    msg.Filename = fileName.ToString();
-                    msg.Messages = messagesPerFile.ToArray();
-                    messages.Add(msg);
-                    break;
-                }
-
-                int lineStart = line.IndexOf('(');
-                int lineEnd = line.IndexOf(')');
-                int lineVal;
-                MessageType messageType = MessageType.Warning;
-                ReadOnlySpan<char> filePath;
-                ReadOnlySpan<char> messageTxt;
-
-                // filepath
-                {
-                    filePath = line.Slice(0, lineStart);
-                }
-
-                // line number
-                {
-                    ReadOnlySpan<char> lineSpan = line.Slice(lineStart + 1, lineEnd - lineStart - 1);
-                    lineVal = int.Parse(lineSpan);
-                }
-
-                // message type
-                {
-                    if(line.Slice(lineEnd + 3).StartsWith("error"))
-                    {
-                        messageType = MessageType.Error;
-                    }
-                    if (line.Slice(lineEnd + 3).StartsWith("warning"))
-                    {
-                        messageType = MessageType.Warning;
-                    } 
-                }
-
-                // text
-                {
-                    messageTxt = line.Slice(lineEnd + 3);
-                }
-
-                MessagePerFile perLine = new MessagePerFile
-                {
-                    Filepath = filePath.ToString().Replace('\\' , '/'),
-                    Text = messageTxt.ToString(),
-                    LineNumber = lineVal,
-                    Type = messageType
-                };
-
-                messagesPerFile.Add(perLine);
-            }
-        }
-
-        return messages.ToArray();
     }
 }

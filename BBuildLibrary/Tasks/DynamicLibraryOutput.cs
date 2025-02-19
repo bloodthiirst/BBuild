@@ -28,7 +28,8 @@ public sealed class DynamicLibraryOutput
         args.Add("/DEBUG:FULL");
         args.Add("/SUBSYSTEM:CONSOLE");
         args.Add("/CGTHREADS:4");
-        
+        args.Add("/NOLOGO"); // supress the "copyright" text at the start
+
         // platform
         {
             TargetPlatform platform = settings.CompilationSettings.Platform;
@@ -83,7 +84,6 @@ public sealed class DynamicLibraryOutput
         process.Exited += (sender, args) =>
         {
             tcs.SetResult(process.ExitCode);
-            process.Dispose();
         };
 
         process.Start();
@@ -94,6 +94,14 @@ public sealed class DynamicLibraryOutput
         {
             exports.Dlls.Add(dllFilePath);
         }
+
+        string stdStr = await process.StandardOutput.ReadToEndAsync();
+
+        LinkingMessage[] messages = BuildUtils.ParseLinkingOutput(stdStr);
+
+        exports.LinkingMessages = messages;
+
+        process.Dispose();
 
         return compilationResult;
     }
