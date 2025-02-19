@@ -1,8 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿namespace Bloodthirst.BBuild;
 
-namespace Bloodthirst.BBuild;
-
-[Flags]
 public enum ExceptionHandling 
 { 
     EHa , 

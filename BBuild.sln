@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBuildCallback", "BuildCallback\BBuildCallback.csproj", "{983E5AA9-E3C0-4971-8555-52E892FCC921}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBuild", "BBuild\BBuild.csproj", "{F521B32B-8D28-466E-8F22-397B3F997420}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBuildLibrary", "BBuildLibrary\BBuildLibrary.csproj", "{240456D5-868F-4865-ABD4-51916E5736AB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBuildCallback", "BBuildCallback\BBuildCallback.csproj", "{BCC5DB90-0587-4A63-B118-F3160DD06604}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{983E5AA9-E3C0-4971-8555-52E892FCC921}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{983E5AA9-E3C0-4971-8555-52E892FCC921}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{983E5AA9-E3C0-4971-8555-52E892FCC921}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{983E5AA9-E3C0-4971-8555-52E892FCC921}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F521B32B-8D28-466E-8F22-397B3F997420}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F521B32B-8D28-466E-8F22-397B3F997420}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F521B32B-8D28-466E-8F22-397B3F997420}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{240456D5-868F-4865-ABD4-51916E5736AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{240456D5-868F-4865-ABD4-51916E5736AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{240456D5-868F-4865-ABD4-51916E5736AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCC5DB90-0587-4A63-B118-F3160DD06604}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCC5DB90-0587-4A63-B118-F3160DD06604}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCC5DB90-0587-4A63-B118-F3160DD06604}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCC5DB90-0587-4A63-B118-F3160DD06604}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

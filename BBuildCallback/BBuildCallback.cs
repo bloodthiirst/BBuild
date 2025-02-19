@@ -2,8 +2,14 @@
 using System.Diagnostics;
 using System.Text.Json;
 
+/// <summary>
+/// Class containing examples of build callbacks that can be used for BBuild
+/// </summary>
 public static class BBuildCallback
 {
+    /// <summary>
+    /// Prebuild method that deletes all the files from the "object files" folder of calling project
+    /// </summary>
     public static void CleanupObjectFilesFolder(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         string objectFilesPath = settings.ObjectFilesPath;
@@ -21,6 +27,9 @@ public static class BBuildCallback
         }
     }
 
+    /// <summary>
+    /// Prebuild method that deletes all the files from the "Build Output" folder of calling project , the type of "Build Output" is passed through the parameters as a string
+    /// </summary>
     public static void CleanupOutputFolder(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         Debug.Assert(parameters != null);
@@ -62,7 +71,7 @@ public static class BBuildCallback
     }
 
     /// <summary>
-    /// Callback method used to copy a Dll produced from a dependency and paste it next to the executable
+    /// Postbuild method used to copy a Dll produced from a dependency and paste it next to the executable
     /// </summary>
     /// <param name="settings"></param>
     /// <param name="context"></param>
@@ -127,11 +136,17 @@ public static class BBuildCallback
         Console.WriteLine($"> Copied Dll from : {absolutePathToDll} to {absolutePathToDestination}");
     }
 
+    /// <summary>
+    /// Prebuild method that outputs a simple log message
+    /// </summary>
     public static void PrebuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         Console.WriteLine($"> Prebuild called from project : {settings.Name} with {parameters.Length} params passed");
     }
 
+    /// <summary>
+    /// Postbuild method that outputs a simple log message
+    /// </summary>
     public static void PostbuildAction(BuildSettings settings, BuildContext context, BuildExports export, JsonElement[] parameters)
     {
         Console.WriteLine($"> Postbuild called from project : {settings.Name} with {parameters.Length} params passed");

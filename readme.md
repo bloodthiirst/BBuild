@@ -1,16 +1,18 @@
 
 # BBuild
-
 A lightweight build tool for C++ projects on Windows, made in .NET Core
+
 
 ## Why did i make this ?
 Building a project should never be an obstacle when coding, and i got tired of dealing with the cursed CMake syntax everytime i wanted to do something slightly different than building a "Hello world" app , so decided to make my own build tool with blackjack and hookers, something sane, lightweight and easily editable, this is my attempt at making that.
 
-## Who can use it ?
-For now this is usable on Windows only, it uses the MSVC complier and linker ``cl.exe``, ``lib.exe`` and ``link.exe``, I have no plans to make this support multiple compliers for now, the focus for me is to make it work better as need be and add more options.
 
-## Why this is different from CMake?
-The project is a wrapper over ``cl.exe``, ``link.exe`` and ``lib.exe`` and only need have one JSON to be added to project's folder in order to work.
+## Who can use it ?
+For now this is usable on Windows only, it uses the MSVC complier and linker ``cl.exe``, ``lib.exe`` and ``link.exe``, I have no plans to make this support multiple compliers for now, the focus for me is to make it work better as need be and to add more options.
+
+
+## Why is this different from CMake?
+The project is a wrapper over ``cl.exe``, ``link.exe`` and ``lib.exe`` and only needs to have one JSON to be added to a project's folder in order to work.
 
 Your first thought might be 
 >isn't this just CMake with extra steps?
@@ -351,7 +353,7 @@ Seems simple enough, pretty much the same as the simeple ``Console`` example exc
 Okay that 's a big wall of text , let's remove the parts we saw already and focus on the new ones
 
 <details>
-<summary><code>Console/Build.json</code> but only including the new changes (Click to expand) </summary>
+<summary><code>Console/Build.json</code> but only including the newly added values that we haven't discussed yet (Click to expand) </summary>
 
 ```json
 {
@@ -414,11 +416,18 @@ So let's unpack how this works and explain what each value does:
     - DllPath : A path to a C# Dll containing the a public static method that implements the action we need to perform
     - MethodAssemblyName : The full name of method that we need find inside the Dll , the naming goes as flllows ``[Namespace].[Method name]``
     - Params : a list of parameters that we can pass to the method
-The signature of the method is the following
+The signature of the PrebuildCallback method is the following
 ```csharp
-    public static void PostbuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
+    public static void PrebuildAction(BuildSettings settings, BuildContext context, JsonElement[] parameters)
+    {
+        Console.WriteLine($"> Prebuild called from project : {settings.Name} with {parameters.Length} params passed");
+    }
+```
+As for PostbuildCallback
+```csharp
+    public static void PostbuildAction(BuildSettings settings, BuildContext context, BuildExports exports, JsonElement[] parameters)
     {
         Console.WriteLine($"> Postbuild called from project : {settings.Name} with {parameters.Length} params passed");
     }
 ```
-In the example mentioned i used some Postbuild and Prebuild actions that are already provided and implemented in the ``BBuildCallback`` project
+In the example mentioned i used some Postbuild and Prebuild actions that are already provided and implemented in the ``BBuildCallback`` project , that's where the ``BBuildCallback.dll`` from that last example came from.

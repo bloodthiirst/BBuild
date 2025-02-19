@@ -16,6 +16,7 @@ public sealed class BuildUtils
     {
         int i = 0;
 
+        bool foundDot = false;
         // read name
         while(i < line.Length)
         {
@@ -28,9 +29,15 @@ public sealed class BuildUtils
             }
             if( curr == '.')
             {
+                foundDot = true;
                 i++;
                 break;
             }
+        }
+
+        if (!foundDot)
+        {
+            return false;
         }
 
         // read extension
