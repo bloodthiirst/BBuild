@@ -20,7 +20,8 @@ public sealed class StaticLibraryOutput
         List<string> args = new List<string>();
 
         arguments = args;
-        filePath = settings.CompilerResources.LibPath;
+
+        filePath = BuildUtils.EnsurePathIsAbsolute(settings.CompilerResources.LibPath, settings);
 
         args.Add($"/OUT:{output.FolderPath}/{output.Filename}.lib");
         args.Add("/NOLOGO"); // supress the "copyright" text at the start

@@ -12,7 +12,7 @@ public sealed class DependencyTreeBuilder
     /// <returns>The root node to the tree, or <see cref="null"/> in case of an error</returns>
     public static DependencyNode? BuildDependencies(string absoluteRootProjectPath)
     {
-        BuildSettings? settings = BuildUtils.GetFromPath(absoluteRootProjectPath);
+        BuildSettings? settings = BuildUtils.GetSettingsFromPath(absoluteRootProjectPath);
         if (settings == null)
         {
             Console.Error.WriteLine($"Couldn't get project info at : {absoluteRootProjectPath}");

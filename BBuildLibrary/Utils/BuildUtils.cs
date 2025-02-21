@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,6 +12,49 @@ public static class BuildUtils
     /// Fixed name of the json file containing the build settings of a project
     /// </summary>
     public const string BuildFilename = "Build.json";
+
+    /// <summary>
+    /// Fixed name of the json file containing the build cache of a project
+    /// </summary>
+    public const string CacheFilename = "Cache.json";
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    static extern uint GetLongPathName(string ShortPath, StringBuilder sb, int buffer);
+
+    [DllImport("kernel32.dll")]
+    static extern uint GetShortPathName(string longpath, StringBuilder sb, int buffer);
+
+    public static string GetWindowsPhysicalPath(string path)
+    {
+        StringBuilder builder = new StringBuilder(255);
+
+        // names with long extension can cause the short name to be actually larger than
+        // the long name.
+        GetShortPathName(path, builder, builder.Capacity);
+
+        path = builder.ToString();
+
+        uint result = GetLongPathName(path, builder, builder.Capacity);
+
+        if (result > 0 && result < builder.Capacity)
+        {
+            //Success retrieved long file name
+            builder[0] = char.ToLower(builder[0]);
+            return builder.ToString(0, (int)result);
+        }
+
+        if (result > 0)
+        {
+            //Need more capacity in the buffer
+            //specified in the result variable
+            builder = new StringBuilder((int)result);
+            result = GetLongPathName(path, builder, builder.Capacity);
+            builder[0] = char.ToLower(builder[0]);
+            return builder.ToString(0, (int)result);
+        }
+
+        return null;
+    }
 
     public static bool IsFileName(ReadOnlySpan<char> line)
     {
@@ -248,23 +292,89 @@ public static class BuildUtils
 
         if (!Path.IsPathRooted(path))
         {
-            path = Path.GetFullPath(path, settings.AbsolutePath).Replace("\\", "/");
+            path = Path.GetFullPath(path, settings.AbsolutePath);
         }
+
+        path = path.Replace("\\", "/");
 
         return path;
     }
+
+    public static void SaveCacheToPath(string absoluteProjectPath, BuildCache cache)
+    {
+        string cachePath = $"{absoluteProjectPath}/{CacheFilename}";
+        
+        JsonSerializerOptions options = new JsonSerializerOptions(JsonSerializerDefaults.General);
+        options.WriteIndented = true;
+
+        using (FileStream fs = new FileStream(cachePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+        using (MemoryStream sw = new MemoryStream())
+        {
+            string json = JsonSerializer.Serialize<BuildCache>(cache, options);
+            byte[] bytes = Encoding.UTF8.GetBytes(json);
+
+            fs.Position = 0;
+            fs.SetLength(bytes.Length);
+            fs.Write(bytes);
+        }
+    }
+
     /// <summary>
-    /// Get the settings and dependencies of the project located at <paramref name="absoluteProjectPath"/>
+    /// Get the cache of the project located at <paramref name="absoluteProjectPath"/>
     /// </summary>
     /// <param name="absoluteProjectPath">Absolute path for the project folder</param>
-    /// <param name="settings">Settings of the project located at <paramref name="absoluteProjectPath"/> , is set to null if the method fails</param>
-    /// <param name="dependencies">Dependencies of the project located at <paramref name="absoluteProjectPath"/>, is set to null if the method fails</param>
     /// <returns>
     /// <para>Returns whether the method succeeded at getting the project information or not</para> 
     /// <para>Returns <see cref="true"/> if it's successfull and fills <paramref name="dependencies"/> and <paramref name="settings"/></para> 
     /// <para>Returns <see cref="false"/> if it fails and sets <paramref name="dependencies"/> and <paramref name="settings"/> to <see cref="null"/></para> 
     /// </returns>
-    public static BuildSettings? GetFromPath(string absoluteProjectPath)
+    public static BuildCache? GetCacheFromPath(string absoluteProjectPath)
+    {
+        Debug.Assert(Path.IsPathRooted(absoluteProjectPath));
+
+        DirectoryInfo? folderPath = new DirectoryInfo(absoluteProjectPath);
+        List<FileInfo> files = new List<FileInfo>(folderPath.EnumerateFiles());
+
+        List<FileInfo> buildFiles = new List<FileInfo>(files.Where(f => f.Name == CacheFilename));
+
+        if (buildFiles.Count != 1)
+        {
+            return null;
+        }
+
+        FileInfo buildFile = buildFiles[0];
+
+        JsonSerializerOptions jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.General);
+        jsonOptions.Converters.Add(new JsonStringEnumConverter());
+
+        BuildCache? cache = null;
+        using (FileStream buildFs = buildFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            try
+            {
+                cache = JsonSerializer.Deserialize<BuildCache>(buildFs, jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+                return null;
+            }
+        }
+
+        return cache;
+    }
+
+    /// <summary>
+    /// Get the settings and dependencies of the project located at <paramref name="absoluteProjectPath"/>
+    /// </summary>
+    /// <param name="absoluteProjectPath">Absolute path for the project folder</param>
+    /// <param name="settings">Settings of the project located at <paramref name="absoluteProjectPath"/> , is set to null if the method fails</param>
+    /// <returns>
+    /// <para>Returns whether the method succeeded at getting the project information or not</para> 
+    /// <para>Returns <see cref="true"/> if it's successfull and fills <paramref name="dependencies"/> and <paramref name="settings"/></para> 
+    /// <para>Returns <see cref="false"/> if it fails and sets <paramref name="dependencies"/> and <paramref name="settings"/> to <see cref="null"/></para> 
+    /// </returns>
+    public static BuildSettings? GetSettingsFromPath(string absoluteProjectPath)
     {
         Debug.Assert(Path.IsPathRooted(absoluteProjectPath));
 

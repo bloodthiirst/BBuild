@@ -13,17 +13,26 @@ public static class BBuildCallback
     public static void CleanupObjectFilesFolder(BuildSettings settings, BuildContext context, JsonElement[] parameters)
     {
         string objectFilesPath = settings.ObjectFilesPath;
+        objectFilesPath = BuildUtils.EnsurePathIsAbsolute(objectFilesPath, settings);
 
-        if (!Path.IsPathRooted(objectFilesPath))
+        string cachePath = $"{settings.AbsolutePath}/{BuildUtils.CacheFilename}";
+
+        if (File.Exists(cachePath))
         {
-            objectFilesPath = Path.GetFullPath(objectFilesPath, settings.AbsolutePath);
+            Console.WriteLine($"> Cleanup of the cache for project : {settings.Name}");
+            File.Delete(cachePath);
         }
 
-        Console.WriteLine($"> Cleanup of the object files for project : {settings.Name}");
-        foreach (string file in Directory.EnumerateFiles(objectFilesPath))
+        IEnumerable<string> objFiles = Directory.EnumerateFiles(objectFilesPath);
+
+        if (objFiles.Count() != 0)
         {
-            Console.WriteLine($"\t> {file} deleted");
-            File.Delete(file);
+            Console.WriteLine($"> Cleanup of the object files for project : {settings.Name}");
+            foreach (string file in objFiles)
+            {
+                Console.WriteLine($"\t> {file} deleted");
+                File.Delete(file);
+            }
         }
     }
 
@@ -99,7 +108,7 @@ public static class BBuildCallback
             string dependencyPath = dependencyInfo.Path;
             dependencyPath = BuildUtils.EnsurePathIsAbsolute(dependencyPath, settings);
 
-            depSettings = BuildUtils.GetFromPath(dependencyPath);
+            depSettings = BuildUtils.GetSettingsFromPath(dependencyPath);
         }
 
         Debug.Assert(depSettings != null);

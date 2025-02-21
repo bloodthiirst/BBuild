@@ -17,7 +17,7 @@ public sealed class ExecutableOutput
     {
         List<string> args = new List<string>();
 
-        filePath = settings.CompilerResources.LinkerPath;
+        filePath = BuildUtils.EnsurePathIsAbsolute(settings.CompilerResources.LinkerPath, settings);
         arguments = args;
 
         string absoluteExePath = $"{output.FolderPath}/{output.Filename}.exe";
@@ -98,6 +98,7 @@ public sealed class ExecutableOutput
         process.Start();
 
         int compilationResult = await tcs.Task;
+        string stdStr = await process.StandardOutput.ReadToEndAsync();
 
         LinkingMessage[] messages = Array.Empty<LinkingMessage>();
 
@@ -107,7 +108,6 @@ public sealed class ExecutableOutput
         }
         else
         {
-            string stdStr = await process.StandardOutput.ReadToEndAsync();
             messages = BuildUtils.ParseLinkingOutput(stdStr);
 
             exports.LinkingMessages = messages;

@@ -13,7 +13,7 @@ public class Program
             rootProjectPath = args[1];    
         }
 
-        BuildSettings? settings = BuildUtils.GetFromPath(rootProjectPath);
+        BuildSettings? settings = BuildUtils.GetSettingsFromPath(rootProjectPath);
 
         if (settings == null)
         {

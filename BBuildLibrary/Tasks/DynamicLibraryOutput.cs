@@ -18,7 +18,7 @@ public sealed class DynamicLibraryOutput
 
         List<string> args = new List<string>();
 
-        filePath = settings.CompilerResources.LinkerPath;
+        filePath = BuildUtils.EnsurePathIsAbsolute(settings.CompilerResources.LinkerPath, settings);
         arguments = args;
 
         string absoluteDllPath = $"{output.FolderPath}/{output.Filename}.dll";
