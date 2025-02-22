@@ -26,7 +26,7 @@ public static class BuildUtils
     /// <returns></returns>
     public static string GetCaseSensitivePath(string path)
     {
-        Debug.Assert(Path.IsPathRooted(path));
+        Debug.Assert(Path.IsPathRooted(path), "the path passed needs to be an absolute path");
 
         StringBuilder sb = new StringBuilder(path.Length);
         List<DirectoryInfo> tempDirectories = new List<DirectoryInfo>();
@@ -80,12 +80,12 @@ public static class BuildUtils
 
                 int len = i - startIdx;
                 ReadOnlySpan<char> pathSegment = path.AsSpan(startIdx, len);
-                
+
                 // if it's a filename , should be the last entry anyways
                 // so we append it and return
-                if(Path.HasExtension(pathSegment))
+                if (Path.HasExtension(pathSegment))
                 {
-                    foreach(FileInfo fileInfo in currDir.EnumerateFiles())
+                    foreach (FileInfo fileInfo in currDir.EnumerateFiles())
                     {
                         bool isSameFile = fileInfo.Name.AsSpan().Equals(pathSegment, StringComparison.OrdinalIgnoreCase);
 
@@ -99,16 +99,16 @@ public static class BuildUtils
                         return sb.ToString();
                     }
                 }
-                
+
                 tempDirectories.Clear();
                 tempDirectories.AddRange(currDir.EnumerateDirectories());
 
                 DirectoryInfo? nextDir = null;
-                
-                foreach(DirectoryInfo dir in tempDirectories)
+
+                foreach (DirectoryInfo dir in tempDirectories)
                 {
                     bool isSameFolder = dir.Name.AsSpan().Equals(pathSegment, StringComparison.OrdinalIgnoreCase);
-                    
+
                     if (!isSameFolder)
                     {
                         continue;
@@ -118,7 +118,7 @@ public static class BuildUtils
                     break;
                 }
 
-                Debug.Assert(nextDir != null);
+                Debug.Assert(nextDir != null, $"Couldn't find a folder with a lowercase name {pathSegment.ToString().ToLower()} at {sb.ToString()}");
 
                 sb.Append(nextDir.Name);
 
