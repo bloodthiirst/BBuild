@@ -229,7 +229,15 @@ public sealed class SourceDependenciesStep
 
             DependencyData currData = new DependencyData();
             currData.Source = BuildUtils.EnsurePathIsAbsolute(sourceFile, settings);
-            currData.Includes = dependencies.Data.Includes.Select(p => BuildUtils.GetWindowsPhysicalPath(p)).ToArray();
+            currData.Includes = new string[dependencies.Data.Includes.Length];
+
+            for (int pIdx = 0; pIdx < dependencies.Data.Includes.Length; pIdx++)
+            {
+                string p = dependencies.Data.Includes[pIdx];
+                string correctedP = BuildUtils.GetCaseSensitivePath(p);
+
+                currData.Includes[pIdx] = correctedP;
+            }
 
             sourceFileDependencies[i] = currData;
 

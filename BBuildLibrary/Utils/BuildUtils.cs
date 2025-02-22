@@ -18,42 +18,130 @@ public static class BuildUtils
     /// </summary>
     public const string CacheFilename = "Cache.json";
 
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    static extern uint GetLongPathName(string ShortPath, StringBuilder sb, int buffer);
-
-    [DllImport("kernel32.dll")]
-    static extern uint GetShortPathName(string longpath, StringBuilder sb, int buffer);
-
-    public static string GetWindowsPhysicalPath(string path)
+    /// <summary>
+    /// <para>Get the case sensitive version on the path passed , the path can point to either a file or a folder</para>
+    /// <para>NOTE : this assumes the path is absolute</para>
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static string GetCaseSensitivePath(string path)
     {
-        StringBuilder builder = new StringBuilder(255);
+        Debug.Assert(Path.IsPathRooted(path));
 
-        // names with long extension can cause the short name to be actually larger than
-        // the long name.
-        GetShortPathName(path, builder, builder.Capacity);
+        StringBuilder sb = new StringBuilder(path.Length);
+        List<DirectoryInfo> tempDirectories = new List<DirectoryInfo>();
 
-        path = builder.ToString();
+        int i = 0;
 
-        uint result = GetLongPathName(path, builder, builder.Capacity);
+        // choose your path separator
+        char separatorToUse = Path.AltDirectorySeparatorChar;
 
-        if (result > 0 && result < builder.Capacity)
+        //get volume
         {
-            //Success retrieved long file name
-            builder[0] = char.ToLower(builder[0]);
-            return builder.ToString(0, (int)result);
+            int idx = path.IndexOf(Path.VolumeSeparatorChar);
+
+            for (int j = 0; j < idx; ++j)
+            {
+                sb.Append(char.ToUpper(path[i]));
+            }
+
+            sb.Append(Path.VolumeSeparatorChar);
+            i = idx + 1;
+
+            // skip next separators
+            {
+                bool appendSeparatorAtTheEnd = false;
+                while (i < path.Length && (path[i] == Path.DirectorySeparatorChar || path[i] == Path.AltDirectorySeparatorChar))
+                {
+                    appendSeparatorAtTheEnd = true;
+                    i++;
+                }
+
+                if (appendSeparatorAtTheEnd)
+                {
+                    sb.Append(separatorToUse);
+                }
+            }
         }
 
-        if (result > 0)
+        // get folders
         {
-            //Need more capacity in the buffer
-            //specified in the result variable
-            builder = new StringBuilder((int)result);
-            result = GetLongPathName(path, builder, builder.Capacity);
-            builder[0] = char.ToLower(builder[0]);
-            return builder.ToString(0, (int)result);
+            DirectoryInfo currDir = new DirectoryInfo(sb.ToString());
+
+            while (i < path.Length)
+            {
+                int startIdx = i;
+
+                // skip until separator
+                while (i < path.Length && path[i] != Path.DirectorySeparatorChar && path[i] != Path.AltDirectorySeparatorChar)
+                {
+                    i++;
+                }
+
+                int len = i - startIdx;
+                ReadOnlySpan<char> pathSegment = path.AsSpan(startIdx, len);
+                
+                // if it's a filename , should be the last entry anyways
+                // so we append it and return
+                if(Path.HasExtension(pathSegment))
+                {
+                    foreach(FileInfo fileInfo in currDir.EnumerateFiles())
+                    {
+                        bool isSameFile = fileInfo.Name.AsSpan().Equals(pathSegment, StringComparison.OrdinalIgnoreCase);
+
+                        if (!isSameFile)
+                        {
+                            continue;
+                        }
+
+                        // this already includes the extension
+                        sb.Append($"{fileInfo.Name}");
+                        return sb.ToString();
+                    }
+                }
+                
+                tempDirectories.Clear();
+                tempDirectories.AddRange(currDir.EnumerateDirectories());
+
+                DirectoryInfo? nextDir = null;
+                
+                foreach(DirectoryInfo dir in tempDirectories)
+                {
+                    bool isSameFolder = dir.Name.AsSpan().Equals(pathSegment, StringComparison.OrdinalIgnoreCase);
+                    
+                    if (!isSameFolder)
+                    {
+                        continue;
+                    }
+
+                    nextDir = dir;
+                    break;
+                }
+
+                Debug.Assert(nextDir != null);
+
+                sb.Append(nextDir.Name);
+
+                currDir = nextDir;
+
+                // skip next separators (yes , C:///// is a valid path so we skip all the separators at once)
+                {
+                    bool appendSeparatorAtTheEnd = false;
+                    while (i < path.Length && (path[i] == Path.DirectorySeparatorChar || path[i] == Path.AltDirectorySeparatorChar))
+                    {
+                        appendSeparatorAtTheEnd = true;
+                        i++;
+                    }
+
+                    if (appendSeparatorAtTheEnd)
+                    {
+                        sb.Append(separatorToUse);
+                    }
+                }
+            }
         }
 
-        return null;
+        return sb.ToString();
     }
 
     public static bool IsFileName(ReadOnlySpan<char> line)
@@ -226,13 +314,13 @@ public static class BuildUtils
         while (i < str.Length)
         {
             int firstColon = -1;
-            for (int j = i + 1 ; j < str.Length - 1; j++)
+            for (int j = i + 1; j < str.Length - 1; j++)
             {
                 char prev = str[j - 1];
                 char curr = str[j + 0];
                 char next = str[j + 1];
 
-                if(prev == ' ' && curr == ':' && next == ' ')
+                if (prev == ' ' && curr == ':' && next == ' ')
                 {
                     firstColon = j;
                     break;
@@ -256,7 +344,7 @@ public static class BuildUtils
 
             // error code
             {
-                errorCode = str.Slice( i + firstColon + 2, secondColon - 1);
+                errorCode = str.Slice(i + firstColon + 2, secondColon - 1);
             }
 
             // text
@@ -303,7 +391,7 @@ public static class BuildUtils
     public static void SaveCacheToPath(string absoluteProjectPath, BuildCache cache)
     {
         string cachePath = $"{absoluteProjectPath}/{CacheFilename}";
-        
+
         JsonSerializerOptions options = new JsonSerializerOptions(JsonSerializerDefaults.General);
         options.WriteIndented = true;
 
