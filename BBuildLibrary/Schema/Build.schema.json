@@ -5,7 +5,7 @@
     "Description": { "type": "string" },
     "DependencyPaths": 
     {
-      "type": "array"
+      "type": "array",
       "items": {
         "type": "object",
         "properties": {
