@@ -7,7 +7,7 @@ public class Program
     public static async Task<int> Main(string[] args)
     {
         string rootProjectPath = Environment.CurrentDirectory;
-        
+
         if (args.Length == 2 && args[0] == "/Path")
         {
             rootProjectPath = args[1];    

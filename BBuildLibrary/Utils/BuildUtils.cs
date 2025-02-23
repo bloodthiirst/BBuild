@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -149,16 +148,24 @@ public static class BuildUtils
         int i = 0;
 
         bool foundDot = false;
+        
         // read name
         while (i < line.Length)
         {
             char curr = line[i];
             i++;
 
-            if (curr == '\\' || curr == '/' || curr == ':')
+            bool isSeparator = 
+                curr == Path.DirectorySeparatorChar || 
+                curr == Path.AltDirectorySeparatorChar || 
+                curr == Path.VolumeSeparatorChar || 
+                curr == Path.PathSeparator;
+                
+            if (isSeparator)
             {
                 return false;
             }
+
             if (curr == '.')
             {
                 foundDot = true;
@@ -178,7 +185,7 @@ public static class BuildUtils
             char curr = line[i];
             i++;
 
-            if (!char.IsLetter(curr))
+            if (!char.IsLetterOrDigit(curr))
             {
                 return false;
             }

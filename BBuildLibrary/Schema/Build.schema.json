@@ -1,0 +1,148 @@
+{
+  "type": "object",
+  "properties": {
+    "Name": { "type": "string" },
+    "Description": { "type": "string" },
+    "DependencyPaths": 
+    {
+      "type": "array"
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": { "type": "string" },
+          "Path": { "type": "string" },
+          "Output": {
+            "type": "string",
+            "enum": [ "Dll", "Executable", "Lib" ]
+          }
+        }
+      }
+    },
+    "CustomVariables": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "PrebuildAction": {
+      "type": "array",
+      "items": 
+      {
+        "type": "object",
+        "properties": 
+        {
+          "DllPath": { "type": "string" },
+          "MethodAssemblyName": { "type": "string" },
+          "Params": { "type": "array" }
+        }
+      }
+    },
+    "PostbuildAction": {
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/PrebuildAction/items"
+      }
+    },
+    "CompilerResources": {
+      "type": "object",
+      "properties": {
+        "CompilerPath": { "type": "string" },
+        "LibPath": { "type": "string" },
+        "LinkerPath": { "type": "string" }
+      }
+    },
+    "CompilationSettings": {
+      "type": "object",
+      "properties": {
+        "Platform": 
+        {
+          "type": "string",
+          "enum": ["Arm","Arm64","Arm64EC","EBC","x64","x86"]
+        },
+        "ExceptionHandlingOptions": {
+          "type": "array",
+          "items": { 
+            "type": "string",
+            "enum": [ "EHa" , "EHs" , "EHc" , "EHr"]
+          }
+        },
+        "WarningLevel": 
+        { 
+          "type": "string",
+          "enum": [ "W0" , "W1" , "W2" , "W3" , "W4" , "Wall"] 
+        },
+        "WarningsAsError": { "type": "boolean" },
+        "DebugInformation": 
+        { 
+          "type": "string",
+          "enum": [ "None" , "Z7" , "Zi" , "ZI"] 
+        },
+        "EnabledSanitizers": {
+          "type": "array",
+          "items": 
+          { 
+            "type": "string" , 
+            "enum": [ "AddressSanitizer" , "AddressFuzzer"] 
+          }
+        },
+        "LanguageStandard": 
+        { 
+          "type": "string" , 
+          "enum": [ "C11","C17","CLatest","Cpp11","Cpp14","Cpp17","Cpp20","Cpp23Preview","CppLatest"] 
+        },
+        "OptimizationLevelOptions": {
+          "type": "array",
+          "items": 
+          { 
+            "type": "string" , 
+            "enum": ["O1" , "O2" ,"Ob" , "Od" , "Oi" , "Os" , "Ot" , "Oy"] 
+          }
+        },
+        "UseJumpTableRData": { "type": "boolean" },
+        "ProcessCount": { "type": "integer" , "minimum": 1 }
+      }
+    },
+    "SourceFiles": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "LibraryFiles": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "LibrariesFolderPaths": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "HeaderIncludeFolders": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "CompilerFlags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "BuildOutputs": {
+      "type": "array",
+      "minItems" : 1,
+      "items": {
+        "type": [ "object" ],
+        "properties": 
+        {
+          "OutputType": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [ "Dll", "Executable", "Lib" ]
+            }
+          },
+          "Filename": { "type": "string" },
+          "FolderPath": { "type": "string" }
+        }
+      }
+    },
+    "PBDFilename": { "type": "string" },
+    "ObjectFilesPath": { "type": "string" }
+  },
+  "required": [ "Name" , "CompilerResources" , "SourceFiles" , "BuildOutputs"]
+}
